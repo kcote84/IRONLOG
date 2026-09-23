@@ -1,4 +1,4 @@
-const CACHE = "ironlog-shell-v3";
+const CACHE = "ironlog-shell-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -20,12 +20,10 @@ const ASSETS = [
   "./assets/fonts/dm-700.woff2",
 ];
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE)
-      .then((cache) => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting()),
-  );
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
+});
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 self.addEventListener("activate", (event) => {
   event.waitUntil(
@@ -35,7 +33,9 @@ self.addEventListener("activate", (event) => {
         .then((keys) =>
           Promise.all(
             keys
-              .filter((key) => key !== CACHE)
+              .filter(
+                (key) => key.startsWith("ironlog-shell-") && key !== CACHE,
+              )
               .map((key) => caches.delete(key)),
           ),
         ),

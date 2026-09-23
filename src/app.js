@@ -26,6 +26,7 @@ import {
 
 const app = document.querySelector("#app");
 const toastElement = document.querySelector("#toast");
+const updatePrompt = document.querySelector("#update-prompt");
 let data = null;
 let handle = null;
 let view = "welcome";
@@ -37,6 +38,10 @@ let fileFresh = false;
 let fileNotice = "";
 let pending = Promise.resolve();
 let toastTimer;
+let updateRegistration = null;
+let postponedUpdate = null;
+let updateReadyToReload = false;
+let updateAccepted = false;
 
 const esc = (value) =>
   String(value ?? "").replace(
@@ -94,6 +99,7 @@ function showError(error) {
 function setBusy(value) {
   busy = value;
   document.body.classList.toggle("is-busy", value);
+  refreshUpdatePrompt();
 }
 function render() {
   app.innerHTML =
@@ -106,6 +112,7 @@ function render() {
           : homePage();
   if (modal) app.insertAdjacentHTML("beforeend", modalHtml());
   bindEvents();
+  refreshUpdatePrompt();
 }
 function shell(content, title = "IRONLOG") {
   return `<div class="shell"><header class="topbar"><button class="brand" data-action="home" aria-label="Accueil IRONLOG">${logo}<span>IRONLOG</span></button><div class="topbar-right"><span class="topbar-line">LIFT. LOG. REPEAT.</span><button class="icon-btn" data-action="settings" aria-label="Réglages">${icon("settings")}</button></div></header>${content}<nav class="bottom-nav" aria-label="Navigation"><button class="${view === "home" ? "active" : ""}" data-action="home"><span class="nav-glyph">▦</span>Exercices</button><button class="${view === "settings" ? "active" : ""}" data-action="settings">${icon("settings", 20)}Réglages</button></nav></div>`;
@@ -665,6 +672,100 @@ async function deleteSet() {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && modal) closeModal();
 });
+function refreshUpdatePrompt() {
+  if (!updatePrompt) return;
+  const available =
+    updateRegistration?.waiting ||
+    (updateReadyToReload ? navigator.serviceWorker.controller : null);
+  updatePrompt.hidden =
+    !available || available === postponedUpdate || !!modal || busy;
+}
+function watchUpdates(registration) {
+  updateRegistration = registration;
+  let hadController = !!navigator.serviceWorker.controller;
+  let lastCheck = 0;
+  const check = () => {
+    if (
+      document.visibilityState !== "visible" ||
+      !navigator.onLine ||
+      Date.now() - lastCheck < 60000
+    )
+      return;
+    lastCheck = Date.now();
+    registration.update().catch(() => {});
+  };
+  registration.addEventListener("updatefound", () => {
+    const installing = registration.installing;
+    installing?.addEventListener("statechange", () => {
+      if (
+        installing.state === "installed" &&
+        navigator.serviceWorker.controller
+      )
+        refreshUpdatePrompt();
+    });
+  });
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (updateAccepted) {
+      location.reload();
+      return;
+    }
+    if (!hadController) {
+      hadController = true;
+      return;
+    }
+    updateReadyToReload = true;
+    refreshUpdatePrompt();
+  });
+  document.querySelector("#update-later").addEventListener("click", () => {
+    postponedUpdate =
+      registration.waiting || navigator.serviceWorker.controller;
+    refreshUpdatePrompt();
+  });
+  document.querySelector("#update-now").addEventListener("click", async () => {
+    if (modal || busy) return;
+    setBusy(true);
+    try {
+      await pending;
+    } catch {
+      setBusy(false);
+      toast(
+        "Une modification n’a pas été enregistrée. Réessayez avant de mettre à jour.",
+        "error",
+      );
+      return;
+    }
+    if (updateReadyToReload) {
+      location.reload();
+      return;
+    }
+    const waiting = registration.waiting;
+    if (!waiting) {
+      setBusy(false);
+      return;
+    }
+    updateAccepted = true;
+    try {
+      waiting.postMessage({ type: "SKIP_WAITING" });
+    } catch {
+      updateAccepted = false;
+      setBusy(false);
+      toast("Impossible de démarrer la mise à jour. Réessayez.", "error");
+      return;
+    }
+    setTimeout(() => {
+      if (updateAccepted) {
+        updateAccepted = false;
+        setBusy(false);
+        toast("La mise à jour tarde. Réessayez dans un instant.", "error");
+      }
+    }, 10000);
+  });
+  document.addEventListener("visibilitychange", check);
+  window.addEventListener("focus", check);
+  setInterval(check, 30 * 60 * 1000);
+  refreshUpdatePrompt();
+  check();
+}
 async function start() {
   try {
     const stored = await loadData();
@@ -677,6 +778,9 @@ async function start() {
     showError(error);
   }
   if ("serviceWorker" in navigator)
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker
+      .register("./sw.js", { updateViaCache: "none" })
+      .then(watchUpdates)
+      .catch(() => {});
 }
 start();

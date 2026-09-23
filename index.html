@@ -26,6 +26,27 @@
   <body>
     <div id="app"></div>
     <div id="toast" role="status" aria-live="polite"></div>
+    <aside
+      id="update-prompt"
+      class="update-prompt"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="update-title"
+      hidden
+    >
+      <div class="update-copy">
+        <span class="eyebrow">NOUVELLE VERSION</span
+        ><strong id="update-title">IRONLOG est prêt à être mis à jour.</strong>
+        <p>Vos exercices et vos séries restent sur cet appareil.</p>
+      </div>
+      <div class="update-actions">
+        <button id="update-later" type="button" class="outline-btn">
+          Plus tard</button
+        ><button id="update-now" type="button" class="primary-btn">
+          Mettre à jour
+        </button>
+      </div>
+    </aside>
     <script type="module" src="./src/app.js"></script>
   </body>
 </html>

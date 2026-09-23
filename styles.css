@@ -1224,6 +1224,45 @@ p {
     height: calc(64px + env(safe-area-inset-top));
   }
 }
+.update-prompt {
+  position: fixed;
+  z-index: 31;
+  left: 50%;
+  bottom: calc(78px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(480px, calc(100vw - 28px));
+  padding: 20px;
+  background: var(--surface-2);
+  border: 1px solid #606263;
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 20px 60px #000b;
+}
+.update-prompt[hidden] {
+  display: none;
+}
+.update-copy strong {
+  display: block;
+  margin: 8px 0 4px;
+  font: 700 25px/1.1 var(--font-display);
+  text-transform: uppercase;
+}
+.update-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.update-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 17px;
+}
+.update-actions button {
+  flex: 1;
+  min-height: 45px;
+  padding: 0 10px;
+  font-size: 14px;
+}
 .mark {
   width: 36px;
   height: 36px;

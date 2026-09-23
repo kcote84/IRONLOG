@@ -22,6 +22,8 @@ Les photos sont réduites localement avant enregistrement. Le fichier contient l
 
 Après une première visite en ligne, le service worker garde l’interface et ses ressources pour l’usage hors ligne. Les données d’entraînement restent dans IndexedDB sur l’appareil.
 
+Lorsqu’une nouvelle version est prête, IRONLOG propose **Mettre à jour** ou **Plus tard**. La page ne se recharge qu’après votre choix; les exercices et séries déjà enregistrés restent dans IndexedDB. L’application vérifie les mises à jour à l’ouverture et au retour au premier plan. Il n’est pas nécessaire de vider le cache.
+
 ## Développement local
 
 Prérequis : Node.js 20+ et Python 3.11+.
