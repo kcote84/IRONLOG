@@ -822,8 +822,10 @@ p {
 }
 .modal {
   width: min(100%, 520px);
-  max-height: calc(100dvh - 40px);
+  max-height: calc(100% - 40px);
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: #242628;
   border: 1px solid #4a4e4f;
   padding: 27px;
@@ -1169,7 +1171,7 @@ p {
   }
   .modal {
     width: 100%;
-    max-height: calc(100dvh - 28px);
+    max-height: calc(100% - 12px);
     border-left: 0;
     border-right: 0;
     border-bottom: 0;

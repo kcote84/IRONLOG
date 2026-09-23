@@ -191,7 +191,7 @@ function modalHtml() {
     const exercise = modal.id
       ? data.exercises.find((x) => x.id === modal.id)
       : null;
-    return `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-top"><div><div class="eyebrow">${exercise ? "MODIFIER" : "NOUVEAU"}</div><h2 id="modal-title">${exercise ? "Votre exercice" : "Ajouter un exercice"}<span class="heading-dot">.</span></h2></div><button class="icon-btn" data-action="close" aria-label="Fermer">${icon("close")}</button></div><form id="exercise-form"><label class="field-label" for="exercise-name">NOM DE L'EXERCICE</label><input id="exercise-name" name="name" class="text-input" maxlength="100" required placeholder="Ex. : Développé couché" value="${esc(exercise?.name || "")}" autofocus><label class="photo-input" for="exercise-photo">${icon("image")}<span>${exercise?.photo ? "Remplacer la photo" : "Ajouter une photo (facultatif)"}</span></label><input id="exercise-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden><p class="field-help">La photo est réduite sur cet appareil et incluse dans votre fichier.</p><button class="primary-btn wide" type="submit">${exercise ? "Enregistrer" : "Créer l’exercice"} ${icon("arrow")}</button></form>${exercise ? `<button class="danger-link" data-action="delete-exercise">${icon("trash", 18)} Supprimer cet exercice</button>` : ""}</section></div>`;
+    return `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1"><div class="modal-top"><div><div class="eyebrow">${exercise ? "MODIFIER" : "NOUVEAU"}</div><h2 id="modal-title">${exercise ? "Votre exercice" : "Ajouter un exercice"}<span class="heading-dot">.</span></h2></div><button class="icon-btn" data-action="close" aria-label="Fermer">${icon("close")}</button></div><form id="exercise-form"><label class="field-label" for="exercise-name">NOM DE L'EXERCICE</label><input id="exercise-name" name="name" class="text-input" maxlength="100" required placeholder="Ex. : Développé couché" value="${esc(exercise?.name || "")}"><label class="photo-input" for="exercise-photo">${icon("image")}<span>${exercise?.photo ? "Remplacer la photo" : "Ajouter une photo (facultatif)"}</span></label><input id="exercise-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden><p class="field-help">La photo est réduite sur cet appareil et incluse dans votre fichier.</p><button class="primary-btn wide" type="submit">${exercise ? "Enregistrer" : "Créer l’exercice"} ${icon("arrow")}</button></form>${exercise ? `<button class="danger-link" data-action="delete-exercise">${icon("trash", 18)} Supprimer cet exercice</button>` : ""}</section></div>`;
   }
   if (modal.type === "set") {
     const set = modal.id ? data.sets.find((x) => x.id === modal.id) : null;
@@ -234,9 +234,24 @@ function bindEvents() {
   app.querySelector(".modal-backdrop")?.addEventListener("click", (event) => {
     if (event.target.classList.contains("modal-backdrop")) closeModal();
   });
-  app.querySelector("#exercise-name")?.focus();
+  syncModalViewport();
+  if (modal?.type === "exercise")
+    app.querySelector(".modal")?.focus({ preventScroll: true });
   app.querySelector("#set-form input")?.focus();
 }
+function syncModalViewport() {
+  const backdrop = app.querySelector(".modal-backdrop");
+  const viewport = window.visualViewport;
+  if (!backdrop || !viewport) return;
+  backdrop.style.top = `${viewport.offsetTop}px`;
+  backdrop.style.left = `${viewport.offsetLeft}px`;
+  backdrop.style.width = `${viewport.width}px`;
+  backdrop.style.height = `${viewport.height}px`;
+  backdrop.style.right = "auto";
+  backdrop.style.bottom = "auto";
+}
+window.visualViewport?.addEventListener("resize", syncModalViewport);
+window.visualViewport?.addEventListener("scroll", syncModalViewport);
 function closeModal() {
   modal = null;
   render();

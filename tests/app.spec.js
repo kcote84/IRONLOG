@@ -1,6 +1,34 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
+test("le formulaire reste accessible quand le clavier réduit l’écran", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "showSaveFilePicker", { value: undefined });
+  });
+  await page.goto("./");
+  await page.getByRole("button", { name: /Créer mon IRONLOG/ }).click();
+  await page.getByRole("button", { name: /Ajouter un exercice/ }).click();
+  await expect(page.getByLabel("NOM DE L'EXERCICE")).not.toBeFocused();
+
+  await page.evaluate(() => {
+    Object.defineProperty(window.visualViewport, "height", {
+      configurable: true,
+      value: 350,
+    });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  });
+  const bounds = await page.locator(".modal-backdrop").boundingBox();
+  expect(bounds.height).toBe(350);
+  await page.locator(".modal").evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(
+    page.getByRole("button", { name: /Créer l’exercice/ }),
+  ).toBeInViewport();
+});
+
 test("création, séries, reprise, fichier, restauration et hors ligne", async ({
   page,
   context,
