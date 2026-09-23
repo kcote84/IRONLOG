@@ -1,0 +1,15 @@
+{
+  "name": "ironlog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "serve": "python -m http.server 8765 --bind 127.0.0.1 --directory ..",
+    "icons": "node tools/generate-icons.mjs",
+    "format:check": "prettier --check index.html manifest.webmanifest styles.css sw.js src/*.js tests/*.js tools/*.mjs playwright.config.js package.json README.md"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "prettier": "^3.9.9"
+  }
+}

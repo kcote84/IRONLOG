@@ -1,0 +1,21 @@
+import { chromium, devices } from "@playwright/test";
+const browser = await chromium.launch();
+const context = await browser.newContext({ ...devices["iPhone 13"] });
+const page = await context.newPage();
+await page.addInitScript(() => {
+  Object.defineProperty(window, "showSaveFilePicker", { value: undefined });
+  Object.defineProperty(window, "showOpenFilePicker", { value: undefined });
+});
+await page.goto("http://127.0.0.1:8765/IRONLOG/");
+await page.screenshot({ path: "test-results/welcome.png", fullPage: true });
+await page.getByRole("button", { name: /Créer mon IRONLOG/ }).click();
+await page.screenshot({ path: "test-results/home.png", fullPage: true });
+await page.getByRole("button", { name: /Ajouter un exercice/ }).click();
+await page.getByLabel("NOM DE L'EXERCICE").fill("Développé couché");
+await page.getByRole("button", { name: /Créer l’exercice/ }).click();
+await page.getByRole("button", { name: /Ajouter une série/ }).click();
+await page.locator('input[name="weight"]').fill("225");
+await page.locator('input[name="reps"]').fill("8");
+await page.getByRole("button", { name: /Ajouter la série/ }).click();
+await page.screenshot({ path: "test-results/detail.png", fullPage: true });
+await browser.close();
