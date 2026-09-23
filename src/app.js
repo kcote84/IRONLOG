@@ -38,6 +38,7 @@ let fileFresh = false;
 let fileNotice = "";
 let pending = Promise.resolve();
 let toastTimer;
+let editorReturnScroll = 0;
 let updateRegistration = null;
 let postponedUpdate = null;
 let updateReadyToReload = false;
@@ -103,14 +104,16 @@ function setBusy(value) {
 }
 function render() {
   app.innerHTML =
-    !data || view === "welcome"
-      ? welcomePage()
-      : view === "exercise"
-        ? exercisePage()
-        : view === "settings"
-          ? settingsPage()
-          : homePage();
-  if (modal) app.insertAdjacentHTML("beforeend", modalHtml());
+    modal?.type === "exercise"
+      ? exerciseEditorPage()
+      : !data || view === "welcome"
+        ? welcomePage()
+        : view === "exercise"
+          ? exercisePage()
+          : view === "settings"
+            ? settingsPage()
+            : homePage();
+  if (modal?.type === "set") app.insertAdjacentHTML("beforeend", modalHtml());
   bindEvents();
   refreshUpdatePrompt();
 }
@@ -193,13 +196,13 @@ function settingsPage() {
     `<main class="page settings-page"><div class="page-heading"><div><div class="eyebrow">VOTRE ESPACE</div><h1>Réglages<span class="heading-dot">.</span></h1><p>Vos données restent sur votre appareil.</p></div><span class="section-number">02 / SETUP</span></div><section class="settings-section"><div class="eyebrow">AFFICHAGE</div><h2>Unité de poids</h2><div class="segmented" role="group" aria-label="Unité de poids"><button class="${data.settings.unit === "lb" ? "active" : ""}" data-action="unit" data-unit="lb">LIVRES <small>lb</small></button><button class="${data.settings.unit === "kg" ? "active" : ""}" data-action="unit" data-unit="kg">KILOS <small>kg</small></button></div><p>Les charges enregistrées sont converties automatiquement.</p></section><section class="settings-section"><div class="eyebrow">VOTRE FICHIER</div><h2>Gardez la maîtrise.</h2><p>IRONLOG enregistre chaque changement sur cet appareil. Conservez aussi votre fichier IRONLOG pour retrouver vos données sur un autre appareil.</p><div class="setting-actions"><button class="primary-btn" data-action="save-file">${icon("file")} Enregistrer mon fichier</button><button class="outline-btn" data-action="backup">Créer une copie de sauvegarde ${icon("arrow")}</button><button class="outline-btn" data-action="open">Ouvrir un fichier IRONLOG ${icon("arrow")}</button></div><div class="info-line">${fileFresh ? `${icon("check", 18)} Fichier enregistré pendant cette visite` : `${icon("file", 18)} Pensez à enregistrer votre fichier régulièrement`}</div></section><section class="settings-section about"><div class="eyebrow">IRONLOG / V1</div><h2>Lift. Log. Repeat.</h2><p>Sans compte. Sans cloud IRONLOG. Sans suivi publicitaire. Vos données vous appartiennent.</p></section></main>`,
   );
 }
+function exerciseEditorPage() {
+  const exercise = modal.id
+    ? data.exercises.find((item) => item.id === modal.id)
+    : null;
+  return `<div class="editor-shell"><header class="topbar"><button class="brand" data-action="home" aria-label="Accueil IRONLOG">${logo}<span>IRONLOG</span></button></header><main class="page exercise-editor"><button class="back-link" data-action="close">${icon("back", 18)} RETOUR</button><div class="eyebrow">${exercise ? "MODIFIER" : "NOUVEAU"} / EXERCICE</div><h1 id="editor-title" tabindex="-1">${exercise ? "Votre exercice" : "Ajouter un exercice"}<span class="heading-dot">.</span></h1><p class="editor-intro">Un nom suffit pour commencer. La photo est facultative.</p><form id="exercise-form" class="editor-form"><label class="field-label" for="exercise-name">NOM DE L'EXERCICE</label><input id="exercise-name" name="name" class="text-input" maxlength="100" required placeholder="Ex. : Développé couché" value="${esc(exercise?.name || "")}"><label class="photo-input" for="exercise-photo">${icon("image")}<span>${exercise?.photo ? "Remplacer la photo" : "Ajouter une photo (facultatif)"}</span></label><input id="exercise-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden><p class="field-help">La photo est réduite sur cet appareil et incluse dans votre fichier.</p><button class="primary-btn wide" type="submit">${exercise ? "Enregistrer" : "Créer l’exercice"} ${icon("arrow")}</button></form>${exercise ? `<button class="danger-link" data-action="delete-exercise">${icon("trash", 18)} Supprimer cet exercice</button>` : ""}</main></div>`;
+}
 function modalHtml() {
-  if (modal.type === "exercise") {
-    const exercise = modal.id
-      ? data.exercises.find((x) => x.id === modal.id)
-      : null;
-    return `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1"><div class="modal-top"><div><div class="eyebrow">${exercise ? "MODIFIER" : "NOUVEAU"}</div><h2 id="modal-title">${exercise ? "Votre exercice" : "Ajouter un exercice"}<span class="heading-dot">.</span></h2></div><button class="icon-btn" data-action="close" aria-label="Fermer">${icon("close")}</button></div><form id="exercise-form"><label class="field-label" for="exercise-name">NOM DE L'EXERCICE</label><input id="exercise-name" name="name" class="text-input" maxlength="100" required placeholder="Ex. : Développé couché" value="${esc(exercise?.name || "")}"><label class="photo-input" for="exercise-photo">${icon("image")}<span>${exercise?.photo ? "Remplacer la photo" : "Ajouter une photo (facultatif)"}</span></label><input id="exercise-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden><p class="field-help">La photo est réduite sur cet appareil et incluse dans votre fichier.</p><button class="primary-btn wide" type="submit">${exercise ? "Enregistrer" : "Créer l’exercice"} ${icon("arrow")}</button></form>${exercise ? `<button class="danger-link" data-action="delete-exercise">${icon("trash", 18)} Supprimer cet exercice</button>` : ""}</section></div>`;
-  }
   if (modal.type === "set") {
     const set = modal.id ? data.sets.find((x) => x.id === modal.id) : null;
     const last = lastWorkoutSets(data, selectedId).at(-1);
@@ -229,6 +232,9 @@ function bindEvents() {
     }),
   );
   app.querySelector("#exercise-form")?.addEventListener("submit", saveExercise);
+  app
+    .querySelector("#exercise-name")
+    ?.addEventListener("focus", () => setTimeout(keepEditorInputVisible, 120));
   app.querySelector("#set-form")?.addEventListener("submit", saveSet);
   app.querySelector("#search")?.addEventListener("input", (event) => {
     search = event.target.value;
@@ -243,7 +249,7 @@ function bindEvents() {
   });
   syncModalViewport();
   if (modal?.type === "exercise")
-    app.querySelector(".modal")?.focus({ preventScroll: true });
+    app.querySelector("#editor-title")?.focus({ preventScroll: true });
   app.querySelector("#set-form input")?.focus();
 }
 function syncModalViewport() {
@@ -259,9 +265,23 @@ function syncModalViewport() {
 }
 window.visualViewport?.addEventListener("resize", syncModalViewport);
 window.visualViewport?.addEventListener("scroll", syncModalViewport);
+window.visualViewport?.addEventListener("resize", keepEditorInputVisible);
+function keepEditorInputVisible() {
+  if (modal?.type !== "exercise") return;
+  const input = app.querySelector("#exercise-name");
+  if (document.activeElement !== input) return;
+  const viewport = window.visualViewport;
+  const visibleBottom =
+    (viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight);
+  const overlap = input.getBoundingClientRect().bottom + 20 - visibleBottom;
+  if (overlap > 0) window.scrollBy(0, overlap);
+}
 function closeModal() {
+  const wasExerciseEditor = modal?.type === "exercise";
   modal = null;
   render();
+  if (wasExerciseEditor)
+    requestAnimationFrame(() => window.scrollTo(0, editorReturnScroll));
 }
 function mutate(operation) {
   pending = pending
@@ -303,12 +323,16 @@ async function onAction(action, args) {
         render();
         break;
       case "new-exercise":
+        editorReturnScroll = window.scrollY;
         modal = { type: "exercise" };
         render();
+        window.scrollTo(0, 0);
         break;
       case "edit-exercise":
+        editorReturnScroll = window.scrollY;
         modal = { type: "exercise", id: selectedId };
         render();
+        window.scrollTo(0, 0);
         break;
       case "add-set":
         modal = { type: "set" };
@@ -533,6 +557,7 @@ async function saveExercise(event) {
     modal = null;
     view = "exercise";
     render();
+    window.scrollTo(0, 0);
     toast(id ? "Exercice modifié." : "Exercice ajouté.");
   } catch (error) {
     showError(error);

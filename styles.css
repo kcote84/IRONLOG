@@ -61,7 +61,7 @@
 }
 html {
   background: var(--bg);
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 body {
   margin: 0;
@@ -810,6 +810,33 @@ p {
 .about {
   border: 0;
 }
+.editor-shell {
+  min-height: 100dvh;
+}
+.exercise-editor {
+  padding-top: 25px;
+  padding-bottom: 110px;
+}
+.exercise-editor h1 {
+  max-width: 700px;
+  margin: 11px 0 8px;
+  font: 800 clamp(48px, 8vw, 76px) / 0.98 var(--font-display);
+  text-transform: uppercase;
+}
+.editor-intro {
+  margin-bottom: 26px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.editor-form {
+  max-width: 580px;
+  padding: 26px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.editor-form .photo-input {
+  margin-top: 20px;
+}
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1176,6 +1203,16 @@ p {
     border-right: 0;
     border-bottom: 0;
     padding: 25px 20px calc(26px + env(safe-area-inset-bottom));
+  }
+  .exercise-editor {
+    padding-top: 18px;
+    padding-bottom: max(45dvh, 260px);
+  }
+  .exercise-editor h1 {
+    font-size: 49px;
+  }
+  .editor-form {
+    padding: 20px;
   }
   .number-fields input {
     font-size: 39px;

@@ -10,20 +10,25 @@ test("le formulaire reste accessible quand le clavier réduit l’écran", async
   await page.goto("./");
   await page.getByRole("button", { name: /Créer mon IRONLOG/ }).click();
   await page.getByRole("button", { name: /Ajouter un exercice/ }).click();
-  await expect(page.getByLabel("NOM DE L'EXERCICE")).not.toBeFocused();
+  const name = page.getByLabel("NOM DE L'EXERCICE");
+  await expect(name).not.toBeFocused();
+  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(page.locator(".exercise-editor")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 350 });
+  await name.focus();
 
   await page.evaluate(() => {
     Object.defineProperty(window.visualViewport, "height", {
       configurable: true,
-      value: 350,
+      value: 280,
     });
     window.visualViewport.dispatchEvent(new Event("resize"));
   });
-  const bounds = await page.locator(".modal-backdrop").boundingBox();
-  expect(bounds.height).toBe(350);
-  await page.locator(".modal").evaluate((element) => {
-    element.scrollTop = element.scrollHeight;
-  });
+  const bounds = await name.boundingBox();
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(280);
+  await page
+    .getByRole("button", { name: /Créer l’exercice/ })
+    .scrollIntoViewIfNeeded();
   await expect(
     page.getByRole("button", { name: /Créer l’exercice/ }),
   ).toBeInViewport();
